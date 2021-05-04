@@ -162,6 +162,12 @@ class BaseClient
         return $output;
     }
 
+    /**
+     * 参数为数组时对url_pin及this->res_url做处理使其符合1688对参数对接受
+     * @param $key
+     * @param $array
+     * @return string[]
+     */
     public function arrayHandle($key, $array)
     {
         $url_quotation = urlencode('"');
