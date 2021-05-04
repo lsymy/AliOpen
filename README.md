@@ -5,4 +5,8 @@
 
 已fork。
 
-原作者若愿意合并请联系。
+```shell script
+composer require lsymy/ali-open
+```
+
+
