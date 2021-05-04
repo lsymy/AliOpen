@@ -1,5 +1,7 @@
 <h1 align="center"> 阿里巴巴开放平台SDK </h1>
-
+原项目地址https://github.com/liaoshengping/ali_open
+在原基础上进行修改
+支持数组传参，post优化。
 <p align="center"> .</p>
 
 
