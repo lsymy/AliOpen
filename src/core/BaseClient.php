@@ -26,8 +26,7 @@ class BaseClient
         $this->app = $app;
     }
 
-
-    public function sign(){
+    public function sign($method = ''){
         //url 因子
         if(empty($this->url_info)){
             throw new Exception('url因子为空，如无配置，请配置');
@@ -47,20 +46,34 @@ class BaseClient
         $code_arr = array_merge([
             'access_token' => $this->app->access_token
         ],$this->app->params);
+
         $aliParams = array();
         $url_pin = '';
+
         foreach ($code_arr as $key => $val) {
-            $url_pin .=$key.'='.$val.'&';
-            $aliParams[] = $key . $val;
+            if (is_array($val)) {
+                $result = $this->arrayHandle($key, $val);
+                $url_pin .= $result['url_pin'];
+                $aliParams[] = $result['aliParam'];
+            } else {
+                $url_pin .=$key.'='.$val.'&';
+                $aliParams[] = $key . $val;
+            }
         }
         sort($aliParams);
+
         $sign_str = join('', $aliParams);
-        $sign_str = $apiInfo . $sign_str;
+        $sign_str = $apiInfo . $sign_str;//签名因子
 
         //签名
         $code_sign = strtoupper(bin2hex(hash_hmac("sha1", $sign_str, $appSecret, true)));
+
         $this->postData  = $code_arr;
         $this->res_url =  $this->base_url.$apiInfo.'?'.$url_pin.'_aop_signature='.$code_sign;
+
+        if ($method == 'post') {
+            $this->res_url = $this->base_url.$apiInfo;
+        }
     }
 
     /**
@@ -75,7 +88,7 @@ class BaseClient
      * 请求方式
      */
     public function post(){
-        $this->sign();
+        $this->sign('post');
         $result = $this->curlRequest($this->res_url,$this->postData,'POST');
         return json_decode($result, true);
     }
@@ -99,14 +112,11 @@ class BaseClient
      */
     public function curlRequest($base_url, $query_data, $method = 'get', $ssl = true, $exe_timeout = 10, $conn_timeout = 10, $dns_timeout = 3600)
     {
-
         $ch = curl_init();
 
         if ( $method == 'get' ) {
             //method get
-            if ( ( !empty($query_data) )
-                && ( is_array($query_data) )
-            ){
+            if ( ( !empty($query_data) ) && ( is_array($query_data) )){
                 $connect_symbol = (strpos($base_url, '?')) ? '&' : '?';
                 foreach($query_data as $key => $val) {
                     if ( is_array($val) ) {
@@ -116,10 +126,9 @@ class BaseClient
                     $connect_symbol = '&';
                 }
             }
+
         } else {
-            if ( ( !empty($query_data) )
-                && ( is_array($query_data) )
-            ){
+            if ( ( !empty($query_data) ) && ( is_array($query_data) )){
                 foreach($query_data as $key => $val) {
                     if ( is_array($val) ) {
                         $query_data[$key] = serialize($val);
@@ -128,7 +137,7 @@ class BaseClient
             }
             //method post
             curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $query_data);
+            curl_setopt($ch, CURLOPT_POSTFIELDS,$query_data);
         }
         curl_setopt($ch, CURLOPT_URL, $base_url);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $conn_timeout);
@@ -136,6 +145,8 @@ class BaseClient
         curl_setopt($ch, CURLOPT_TIMEOUT, $exe_timeout);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch,  CURLOPT_RETURNTRANSFER, 1);
+
         // 关闭ssl验证
         if($ssl){
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -151,4 +162,28 @@ class BaseClient
         return $output;
     }
 
+    public function arrayHandle($key, $array)
+    {
+        $url_quotation = urlencode('"');
+        $url_left_brackets = urlencode('{');
+        $url_right_brackets = urlencode('}');
+
+        $arr = json_encode($array);
+        $arr = str_replace("{", $url_left_brackets, $arr);
+        $arr = str_replace("}", $url_right_brackets, $arr);
+        $arr = str_replace('"', $url_quotation, $arr);
+        $url_pin = $key . '=' . $arr . '&';
+
+        $str = $key . '{';
+        foreach ($array as $k => $v) {
+            $str .= '"'. $k . '":"' . $v . '",';
+        }
+        $str = rtrim($str, ",");
+        $str .= '}';
+
+        return [
+            'url_pin' => $url_pin,
+            'aliParam' => $str,
+        ];
+    }
 }
