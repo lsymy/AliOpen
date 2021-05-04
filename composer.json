@@ -1,17 +1,17 @@
 {
-    "name": "liaosp\/ali_open",
+    "name": "lsymy\/AliOpen",
     "description": "阿里巴巴开放平台sdk ，签名算法",
     "license": "MIT",
     "authors": [
         {
-            "name": "liaosp.top",
-            "email": "1194008361@qq.com"
+            "name": "lsymy",
+            "email": "405252510@qq.com"
         }
     ],
     "require": {},
     "autoload": {
         "psr-4": {
-            "Liaosp\\AliOpen\\": "src"
+            "Lsymy\\AliOpen\\": "src"
         }
     }
 }
