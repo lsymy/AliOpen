@@ -4,6 +4,9 @@
 namespace Liaosp\AliOpen\core;
 
 
+use app\admin\validate\Product;
+use function GuzzleHttp\Psr7\str;
+
 /**
  * Class BaseClient
  * @package Liaosp\AliOpen\core
@@ -162,30 +165,19 @@ class BaseClient
         return $output;
     }
 
-    /**
-     * 参数为数组时对url_pin及this->res_url做处理使其符合1688对参数对接受
-     * @param $key
-     * @param $array
-     * @return string[]
-     */
     public function arrayHandle($key, $array)
     {
-        $url_quotation = urlencode('"');
-        $url_left_brackets = urlencode('{');
-        $url_right_brackets = urlencode('}');
+        $json = json_encode($array, JSON_UNESCAPED_UNICODE);
 
-        $arr = json_encode($array);
-        $arr = str_replace("{", $url_left_brackets, $arr);
-        $arr = str_replace("}", $url_right_brackets, $arr);
-        $arr = str_replace('"', $url_quotation, $arr);
-        $url_pin = $key . '=' . $arr . '&';
+        $urlEncode_str = urlencode($json);
 
-        $str = $key . '{';
-        foreach ($array as $k => $v) {
-            $str .= '"'. $k . '":"' . $v . '",';
-        }
-        $str = rtrim($str, ",");
-        $str .= '}';
+        //冒号逗号替换
+        $urlEncode_str = str_replace("%3A", ":", $urlEncode_str);
+        $urlEncode_str = str_replace("%2C", ",", $urlEncode_str);
+
+        $url_pin = $key . '=' . $urlEncode_str . '&';
+
+        $str = $key . $json;
 
         return [
             'url_pin' => $url_pin,
